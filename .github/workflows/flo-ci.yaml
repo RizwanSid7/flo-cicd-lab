@@ -1,0 +1,78 @@
+name: Flo CI - Build and Deploy Staging
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "app/**"
+      - "Dockerfile"
+      - ".dockerignore"
+      - ".github/workflows/flo-ci.yaml"
+
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+env:
+  AWS_REGION: eu-central-1
+  ECR_REGISTRY: 263797146828.dkr.ecr.eu-central-1.amazonaws.com
+  ECR_REPOSITORY: flo-cicd-lab
+
+jobs:
+  build-and-deploy-staging:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: arn:aws:iam::263797146828:role/FloLabGitHubOIDCRole
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker image
+        run: |
+          echo "Building image for commit $GITHUB_SHA"
+
+          docker build \
+            --build-arg APP_VERSION="$GITHUB_SHA" \
+            -t "$ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA" \
+            .
+
+      - name: Push Docker image
+        run: |
+          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA"
+
+      - name: Update staging Kustomize image
+        run: |
+          sed -i \
+            "s/newTag: .*/newTag: \"$GITHUB_SHA\"/" \
+            gitops/overlays/staging/kustomization.yaml
+
+          echo "New staging image:"
+          grep "newTag:" gitops/overlays/staging/kustomization.yaml
+
+      - name: Commit staging deployment
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add gitops/overlays/staging/kustomization.yaml
+
+          if git diff --cached --quiet; then
+            echo "No GitOps change required"
+          else
+            git commit -m "chore(staging): deploy ${GITHUB_SHA::7} [skip ci]"
+            git push
+          fi
