@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: flo-production
+  namespace: argocd
+
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/YOUR-USERNAME/flo-cicd-lab.git
+    targetRevision: main
+    path: gitops/overlays/production
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: flo-production
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
+    syncOptions:
+      - CreateNamespace=true

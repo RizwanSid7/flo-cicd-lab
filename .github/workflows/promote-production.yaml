@@ -1,0 +1,51 @@
+name: Promote Staging Image to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_sha:
+        description: "Full Git SHA already validated in staging"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  promote-production:
+    runs-on: ubuntu-latest
+
+    environment:
+      name: production
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Show image being promoted
+        run: |
+          echo "Promoting image SHA:"
+          echo "${{ inputs.image_sha }}"
+
+      - name: Update production image
+        run: |
+          sed -i \
+            's/newTag: .*/newTag: "${{ inputs.image_sha }}"/' \
+            gitops/overlays/production/kustomization.yaml
+
+          echo "Production image configuration:"
+          grep "newTag:" gitops/overlays/production/kustomization.yaml
+
+      - name: Commit production promotion
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add gitops/overlays/production/kustomization.yaml
+
+          if git diff --cached --quiet; then
+            echo "Production already uses this image"
+          else
+            git commit -m "chore(prod): promote ${{ inputs.image_sha }}"
+            git push
+          fi
