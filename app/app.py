@@ -8,7 +8,8 @@ def home():
     return jsonify({
         "service": "flo-cicd-lab",
         "environment": os.getenv("ENVIRONMENT", "local"),
-        "version": os.getenv("APP_VERSION", "dev")
+        "version": os.getenv("APP_VERSION", "dev"),
+        "message": "Hello from version 2"
     })
 
 @app.route("/health")
