@@ -8,7 +8,7 @@ spec:
   project: default
 
   source:
-    repoURL: https://github.com/YOUR-USERNAME/flo-cicd-lab.git
+    repoURL: https://github.com/RizwanSid7/flo-cicd-lab.git
     targetRevision: main
     path: gitops/overlays/production
 
