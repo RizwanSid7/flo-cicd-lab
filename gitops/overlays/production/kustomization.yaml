@@ -8,4 +8,4 @@ resources:
 
 images:
   - name: 263797146828.dkr.ecr.eu-central-1.amazonaws.com/flo-cicd-lab
-    newTag: v1
+    newTag: "c742a42da431d119287db3467bbe11dd8ffd4584"
