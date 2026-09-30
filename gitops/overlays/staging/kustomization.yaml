@@ -8,7 +8,7 @@ resources:
 
 images:
   - name: 263797146828.dkr.ecr.eu-central-1.amazonaws.com/flo-cicd-lab
-    newTag: "c742a42da431d119287db3467bbe11dd8ffd4584"
+    newTag: "293c145966ec1a760265ac396e1f4bf06fa2c62b"
 
 replicas:
   - name: flo-lab
